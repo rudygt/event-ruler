@@ -3,6 +3,7 @@ package software.amazon.event.ruler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.HdrHistogram.Histogram;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
@@ -469,6 +470,7 @@ public class Benchmarks {
         }
     }
 
+    @Ignore
     @Test
     public void CL2BenchmarkNumeric() throws Exception {
         readCityLots2();
@@ -501,58 +503,66 @@ public class Benchmarks {
         bm.addRules(EXACT_RULES, EXACT_MATCHES);
         bm.run(citylots2);
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(EXACT_RULES, EXACT_MATCHES);
         bm.run(citylots2);
         System.out.println("EXACT events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "EXACT");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(WILDCARD_RULES, WILDCARD_MATCHES);
         bm.run(citylots2);
         System.out.println("WILDCARD events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "WILDCARD");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(PREFIX_RULES, PREFIX_MATCHES);
         bm.run(citylots2);
         System.out.println("PREFIX events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "PREFIX");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(SUFFIX_RULES, SUFFIX_MATCHES);
         bm.run(citylots2);
         System.out.println("SUFFIX events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "SUFFIX");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(EQUALS_IGNORE_CASE_RULES, EQUALS_IGNORE_CASE_MATCHES);
         bm.run(citylots2);
         System.out.println("EQUALS_IGNORE_CASE events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "EQUALS_IGNORE_CASE");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(NUMERIC_RULES, NUMERIC_MATCHES);
         bm.run(citylots2);
         System.out.println("NUMERIC events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "NUMERIC");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(ANYTHING_BUT_RULES, ANYTHING_BUT_MATCHES);
         bm.run(citylots2);
         System.out.println("ANYTHING-BUT events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "ANYTHING-BUT");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(COMPLEX_ARRAYS_RULES, COMPLEX_ARRAYS_MATCHES);
         bm.run(citylots2);
         System.out.println("COMPLEX_ARRAYS events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "COMPLEX_ARRAYS");
 
         // skips complex arrays matchers because their slowness can hide improvements
         // and regressions for other matchers. Remove this once we find ways to make
         // arrays fast enough to others matchers
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
 
         bm.addRules(NUMERIC_RULES, NUMERIC_MATCHES);
         bm.addRules(EXACT_RULES, EXACT_MATCHES);
@@ -560,8 +570,9 @@ public class Benchmarks {
         bm.addRules(ANYTHING_BUT_RULES, ANYTHING_BUT_MATCHES);
         bm.run(citylots2);
         System.out.println("PARTIAL_COMBO events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "PARTIAL_COMBO");
 
-        bm = new Benchmarker();
+        bm = new Benchmarker(true);
         bm.addRules(NUMERIC_RULES, NUMERIC_MATCHES);
         bm.addRules(EXACT_RULES, EXACT_MATCHES);
         bm.addRules(PREFIX_RULES, PREFIX_MATCHES);
@@ -569,6 +580,7 @@ public class Benchmarks {
         bm.addRules(COMPLEX_ARRAYS_RULES, COMPLEX_ARRAYS_MATCHES);
         bm.run(citylots2);
         System.out.println("COMBO events/sec: " + String.format("%.1f", bm.getEPS()));
+        HistogramUtils.saveHistogram(bm.h, "COMBO");
     }
 
     // make sure we can handle nasty deep events
