@@ -1,7 +1,10 @@
 package software.amazon.event.ruler;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.HdrHistogram.Histogram;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -9,13 +12,12 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -35,6 +37,8 @@ import static org.junit.Assert.assertNull;
 
 public class Benchmarks {
 
+    @org.junit.Rule
+    public TestName name = new TestName();
     // original citylots
     private static final String CITYLOTS_JSON = "src/test/data/citylots.json.gz";
 
@@ -466,6 +470,28 @@ public class Benchmarks {
     }
 
     @Test
+    public void CL2BenchmarkNumeric() throws Exception {
+        readCityLots2();
+        Benchmarker bm = new Benchmarker(true);
+
+        /*int[] matches = NUMERIC_MATCHES.clone();
+        matches[2] = 91588;
+        matches[3] = 15310;
+        matches[4] = 62147;
+        matches[0] = 225;
+        matches[1] = 0;*/
+        bm.addRules(NUMERIC_RULES, NUMERIC_MATCHES);
+        //bm.run(citylots2.stream().limit(citylots2.size() / 2).collect(Collectors.toList()));
+        bm.run(citylots2);
+        System.out.println("NUMERIC events/sec: " + String.format("%.1f", bm.getEPS()));
+
+        bm.printHistogram();
+        HistogramUtils.saveHistogram( bm.h, "NUMERIC");
+        /*System.out.print(bm.slowest / 1000000);
+        Files.write(Paths.get("c:\\repos\\numericSlow.json"), bm.slowestSample.getBytes(StandardCharsets.UTF_8));*/
+    }
+
+    @Test
     public void CL2Benchmark() throws Exception {
         readCityLots2();
         Benchmarker bm;
@@ -613,6 +639,17 @@ public class Benchmarks {
         Machine machine = new Machine();
         double eps = 0.0;
 
+        Histogram h = null;
+
+        public Benchmarker() {
+            this(false);
+        }
+
+        public Benchmarker(boolean histograms) {
+            if (histograms)
+                h = new Histogram(Duration.ofMinutes(1).toNanos(), 3);
+        }
+
         void addRules(String[] rules, int[] wanted) throws Exception {
             for (int i = 0; i < rules.length; i++) {
                 String rname = String.format("r%d", ruleCount++);
@@ -625,7 +662,7 @@ public class Benchmarks {
             final Map<String, Integer> gotMatches = new HashMap<>();
             long before = System.currentTimeMillis();
             for (String event : events) {
-                List<String> matches = machine.rulesForJSONEvent(event);
+                List<String> matches = runOne(event);
                 for (String match : matches) {
                     Integer got = gotMatches.get(match);
                     if (got == null) {
@@ -646,6 +683,23 @@ public class Benchmarks {
             for (String want : wanted.keySet()) {
                 assertEquals(wanted.get(want), gotMatches.get(want) == null ? (Integer) 0 : gotMatches.get(want));
             }
+        }
+
+        private List<String> runOne(String event) throws Exception {
+            if (h == null)
+                return machine.rulesForJSONEvent(event);
+            else {
+                long before = System.nanoTime();
+                List<String> result = machine.rulesForJSONEvent(event);
+                long after = System.nanoTime();
+                h.recordValue(after - before);
+                return result;
+            }
+        }
+
+        void printHistogram() {
+            if (h != null)
+                h.outputPercentileDistribution(System.out, 2, 0.01 * Duration.ofMillis(1).toNanos());
         }
 
         double getEPS() {
