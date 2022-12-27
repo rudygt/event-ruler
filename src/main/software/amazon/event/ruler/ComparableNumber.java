@@ -54,6 +54,7 @@ class ComparableNumber {
 
     /**
      * converts a single byte to its two hexadecimal character representation
+     *
      * @param value the byte we want to convert to hex string
      * @return a 2 digit char array with the equivalent hex representation
      */
@@ -77,7 +78,7 @@ class ComparableNumber {
         return buffer.array();
     }
 
-    static String toHexStringSkippingFirstByte(Long value) {
+    static String toHexStringSkippingFirstByte(long value) {
         byte[] raw = longToByteBuffer(value);
         char[] outputChars = new char[14];
         for (int i = 1; i < raw.length; i++) {
